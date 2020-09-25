@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
 from numpy import float64 as npfloat64
-from scipy.sparse import coo_matrix
+from scipy.sparse import coo_matrix, csr_matrix
 
 from implicit.als import AlternatingLeastSquares
 
@@ -42,14 +42,16 @@ def get_spr_matrix(df_long, prd_col, cli_col):
     df_long[prd_col] = df_long[prd_col].astype('category')
     df_long[cli_col] = df_long[cli_col].astype('category')
 
-    coo_prd_cli_matrix = coo_matrix((df_long[score_col],
+    csr_prd_cli_matrix = coo_matrix((df_long[score_col],
                                      (df_long[prd_col].cat.codes.copy(),
-                                      df_long[cli_col].cat.codes.copy())))
-    coo_cli_prd_matrix = coo_matrix((df_long.socre_col,
+                                      df_long[cli_col].cat.codes.copy())),
+                                    dtype=npfloat64).tocsr()
+    csr_cli_prd_matrix = coo_matrix((df_long[score_col],
                                      (df_long[cli_col].cat.codes.copy(),
-                                      df_long[prd_col].cat.codes.copy())))
+                                      df_long[prd_col].cat.codes.copy())),
+                                    dtype=npfloat64).tocsr()
 
-    return coo_prd_cli_matrix, coo_cli_prd_matrix, df_long
+    return csr_prd_cli_matrix, csr_cli_prd_matrix, df_long
 
 
 def get_prd_prd_recs(prd_ids, model):
@@ -64,6 +66,72 @@ def get_prd_prd_recs(prd_ids, model):
     prd_recs.columns = ['Top' + str(i) + '_rec' for i in range(1, 11)]
 
     return prd_recs
+
+
+def get_cli_cli_recs(cli_ids, model):
+    pos_recs = {}
+    for pos, cli in cli_ids.items():
+        recs = model.similar_users(pos, N=11)
+        recs = [cli_ids[el[0]] for el in recs[1:]]
+        pos_recs[cli] = recs
+
+    cli_recs = pd.DataFrame(pos_recs.values(),
+                            index=pos_recs.keys())
+    cli_recs.columns = ['Top' + str(i) + '_rec' for i in range(1, 11)]
+
+    return cli_recs
+
+
+def get_prd_cli_recs(csr_cli_prd_matrix, model, cli_ids, prd_ids):
+    pos_recs = {}
+    for pos, cli in cli_ids.items():
+        recs = model.recommend(pos, user_items=csr_cli_prd_matrix, N=11)
+        recs = [prd_ids[el[0]] for el in recs[1:]]
+        pos_recs[cli] = recs
+
+    prd_cli_recs = pd.DataFrame(pos_recs.values(),
+                                index=pos_recs.keys())
+    prd_cli_recs.columns = ['Top' + str(i) + '_rec' for i in range(1, 11)]
+
+    return prd_cli_recs
+
+
+def train_evaluate_als_model(csr_prd_cli_matrix):
+    from sklearn.model_selection import ParameterGrid
+    from implicit.evaluation import train_test_split
+    from implicit.evaluation import mean_average_precision_at_k
+    params = {
+            'factors': [50, 100, 150],
+            'regularization': [0.01, 0.05, 0.1],
+            'dtype': [npfloat64],  # prestar atenção nesse parametro
+            'use_native': [True],
+            'use_cg': [False],
+            'use_gpu': [False],
+            'iterations': [15, 30, 50],
+            'num_threads': [0],
+            'random_state': [42]
+            }
+    param_grid = ParameterGrid(params)
+
+    df_grid, df_test = train_test_split(csr_prd_cli_matrix,
+                                        train_percentage=0.8)
+    df_train, df_eval = train_test_split(df_grid, train_percentage=0.8)
+    grid_score = {}
+
+    for i, grid in enumerate(param_grid):
+        m = AlternatingLeastSquares(**grid)
+        m.fit(df_train, show_progress=False)
+        score = mean_average_precision_at_k(m, df_train, df_eval,
+                                            num_threads=0, show_progress=False)
+        grid_score[i] = score
+
+    # printar os best param e score para o stdout no futuro
+    best = pd.Series(grid_score).idxmax()
+    best_params = param_grid[best]
+    model = AlternatingLeastSquares(**best_params)
+    model.fit(csr_prd_cli_matrix)
+
+    return model
 
 
 # Função para extração de recomendações de prouto-para-produto. Inclui
@@ -106,42 +174,8 @@ def get_prd_for_cli_recs(cli_look, prd_look, model, user_items_df):
 
 
 # Função principal para recomendações com o ALS-implicit
-def run_prd_als_rec(df):
-    # Criando referência de Produto_ID e Cliente_ID com o valor posiocional de
-    # cada um. Necessário para consulta no algoritmo, que trabalha com os
-    # posicionais apenas
-    cli_look = pd.Series(df.index.tolist(), name='cli_id')
-    prd_look = pd.Series([el[1] for el in df.columns.tolist()], name='prd_id')
-
-    # Criando representação em CSR da matriz esparsa de scores para treinamento
-    # do modelo. A mesma precisa estar no formato Produtos X Clientes, logo a
-    # aplicação de Transposta a mesma.
-    spr_prd_cli_df = csr_matrix(df.T.values)
-
-    # Para recomendação de produtos a clientes, é necessário que a matriz
-    # esparsa de scores esteja no formato Clientes x Produtos
-    spr_cli_prd_df = csr_matrix(df.values)
-
-    # Forçando que o modelo não use aceleração de GPU, visando evitar problemas
-    # de configuração em diferentes ambientes. Utilizando máximo número de
-    # threads
-    model = AlternatingLeastSquares(factors=50,
-                                    regularization=0.01,
-                                    dtype=npfloat64,
-                                    iterations=50,
-                                    use_native=True,
-                                    num_threads=0,
-                                    use_gpu=False)
-
-    # Fittando o modelo
-    model.fit(spr_prd_cli_df)
-
-    # Obtendo o DataFrame de recomendação de Produtos para Produtos
-    prd_recs = get_prd_for_prd_recs(prd_look, model)
-
-    # Obtendo o DataFrame de recomendação de Produtos para Clientes
-    cli_recs = get_prd_for_cli_recs(cli_look, prd_look, model, spr_cli_prd_df)
-
+def run_als_rec(df):
+    
     # Exportação do modelo
     with open('/path/to/save/models/mdl_als_implicit.pkl', 'wb') as f:
         pickle.dump(model, f)

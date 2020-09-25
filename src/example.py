@@ -3,7 +3,7 @@
 
 import pandas as pd
 import numpy as np
-from scipy.sparse import coo_matrix
+from scipy.sparse import coo_matrix, csr_matrix
 from implicit.als import AlternatingLeastSquares
 from implicit.utils import nonzeros
 

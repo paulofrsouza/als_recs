@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Função principal para recomendações com o ALS-implicit
-from als_rec import funcs as als
+from als_recs import funcs as als
 import pandas as pd
 import pickle
 import logging

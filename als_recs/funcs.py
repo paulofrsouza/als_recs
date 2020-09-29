@@ -3,10 +3,11 @@
 import pandas as pd
 from numpy import float64 as npfloat64
 from scipy.sparse import coo_matrix, csr_matrix
+from sklearn.model_selection import ParameterGrid
 
 from implicit.als import AlternatingLeastSquares
-
-import pickle
+from implicit.evaluation import train_test_split
+from implicit.evaluation import mean_average_precision_at_k
 
 # Sistema de recomendações de Produtos-para-Produto e de Prdutos-para-Cliente.
 # Se baseia na implementação do algoritmo ALS na biblioteca Python `implicit`,
@@ -22,13 +23,6 @@ import pickle
 # Montar como um projeto próprio, seguindo o template do cookicutter
 # Indicar as necessidades do dataset alimentado: tabela esparsa de scores
 # implícitos, com Cliente_ID no index e Produto_ID nas colunas
-
-
-def get_ids(df_long, prd_col, cli_col):
-    prds = dict(enumerate(df_long[prd_col].cat.categories))
-    clis = dict(enumerate(df_long[cli_col].cat.categories))
-
-    return prds, clis
 
 
 def get_spr_matrix(df_long, prd_col, cli_col):
@@ -52,6 +46,13 @@ def get_spr_matrix(df_long, prd_col, cli_col):
                                     dtype=npfloat64).tocsr()
 
     return csr_prd_cli_matrix, csr_cli_prd_matrix, df_long
+
+
+def get_ids(df_long, prd_col, cli_col):
+    prds = dict(enumerate(df_long[prd_col].cat.categories))
+    clis = dict(enumerate(df_long[cli_col].cat.categories))
+
+    return prds, clis
 
 
 def get_prd_prd_recs(prd_ids, model):
@@ -97,9 +98,6 @@ def get_prd_cli_recs(csr_cli_prd_matrix, model, cli_ids, prd_ids):
 
 
 def train_evaluate_als_model(csr_prd_cli_matrix):
-    from sklearn.model_selection import ParameterGrid
-    from implicit.evaluation import train_test_split
-    from implicit.evaluation import mean_average_precision_at_k
     params = {
             'factors': [50, 100, 150],
             'regularization': [0.01, 0.05, 0.1],

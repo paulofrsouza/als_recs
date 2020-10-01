@@ -39,31 +39,17 @@ def get_prj_path(proj_name):
 
 
 def als_recs_example():
-    # Fetching online retail data from UCI repository
-    # url = 'http://archive.ics.uci.edu/ml/machine-learning-databases/00352/Online%20Retail.xlsx'
-    # df = pd.read_excel(url)
-    # df = pd.read_csv('./data/raw/online_retail.csv')
-
     prj_path = get_prj_path('als_recs')
-    with open(prj_path + '/data/raw/online_retail.pkl', 'rb') as f:
-        df = pickle.load(f)
+    df = pd.read_csv(prj_path + '/data/raw/online_retail_long.csv')
     prd_col = 'StockCode'
     cli_col = 'CustomerID'
-    print('\n' + '-'*30)
-    print('Original Online Retail Dataset')
-    display(df.head())
 
-    df.drop(['InvoiceNo', 'Description', 'InvoiceDate', 'Country'],
-            axis=1, inplace=True)
-    df.dropna(inplace=True)
-    df['CustomerID'] = df.CustomerID.astype('int64')
-    df['total_price'] = df.Quantity * df.UnitPrice
-    df.drop(['Quantity', 'UnitPrice'], axis=1, inplace=True)
+    with open(prj_path + '/als_recs/tutorial.txt', 'r') as fin:
+        print(fin.read())
 
-    print('\n' + '-'*30)
+    print('----------------------------------------')
     print('Processed Dataset to be fed to the model')
-    print('"total_price" was calculated multiplying "Quantiy" and "UnitPrice" \
-          and it will serve as our implicit score.')
+    print('----------------------------------------\n')
     display(df.head())
 
     (csr_prd_cli_matrix,
@@ -72,6 +58,9 @@ def als_recs_example():
     prd_ids, cli_ids = als.get_ids(df_cat, prd_col, cli_col)
 
     # model = als.train_evaluate_als_model(csr_prd_cli_matrix)
+    print('\n--------------')
+    print('Model training')
+    print('--------------')
     model = AlternatingLeastSquares(factors=50,
                                     regularization=0.01,
                                     dtype=npfloat64,
@@ -86,14 +75,20 @@ def als_recs_example():
     prd_cli_recs = als.get_prd_cli_recs(csr_cli_prd_matrix,
                                         model, cli_ids, prd_ids)
 
-    print('\n' + '-'*30)
-    print("Similar Products recommendations\n")
+    print('\n-------------')
+    print('Model outputs')
+    print('-------------')
+
+    print("\nSimilar Products recommendations")
+    print('--------------------------------')
     display(prd_recs.head())
-    print('\n\n' + '-'*30)
-    print("Similar Clients recommendations\n")
+
+    print("\nSimilar Clients recommendations")
+    print('-------------------------------')
     display(cli_recs.head())
-    print('\n\n' + '-'*30)
-    print("Recommendations of Products to each Client\n")
+
+    print("\nRecommendations of Products to each Client")
+    print('------------------------------------------')
     display(prd_cli_recs.head())
 
 

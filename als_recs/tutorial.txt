@@ -1,0 +1,35 @@
+////////////////////////////
+///ALS_RECS TUTORIAL MODE///
+////////////////////////////
+
+The folowing example will demonstrate how to use the als_recs Python
+library. The dataset used here is a modified version from the Online 
+Retail one present in UCI's repositories. You can find it in the following
+link:
+
+https://archive.ics.uci.edu/ml/datasets/Online+Retail
+
+The data passed to the tool must be in LONG format, where each row is an
+implicit interaction the Client had with a given Product. The data must
+contain three columns: one with the ClientID, another with the ProductID
+of the Product the Client interacted with and a last column containing the
+Implicit Score calculated from this interaction.
+
+This way, the data shoud look something like this:
+
++-----------+------------+----------------+
+| client_id | product_id | implicit_score |
++-----------+------------+----------------+
+|  85123A   |   17856    |   15.304688    |
+|  71053    |   12537    |   20.343750    |
+|  84406B   |   17559    |   22.000000    |
++-----------+------------+----------------+           
+
+The columns don't need to be in the same order, but it is important to 
+pass the right names for the ClientID (cli_col) and ProductID (prd_col)
+columns when calling the tool. It is not necessary to pass the name of the
+column containing the Implicit Score, but you must garantee the dataset 
+has only 3 columns.
+
+As of the columns data types, the only requirement is that the Implicit
+Score column be numeric.

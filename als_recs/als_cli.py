@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
 import sys
 import logging
 import click
@@ -13,19 +15,33 @@ logging.basicConfig(
 )
 
 
-#### colocar condicional para o modo tutorial
+def run_tutorial(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+    example.als_recs_example()
+    ctx.exit()
 
-@click.command()
+
+
+
+"""
 @click.option('-m', '--mode',
               type=click.Choice(['analysis', 'tutorial'],
                                 case_sensitive=False),
               prompt='Execution mode',
               default='analysis',
               help="Program's execution modes. Options are 'tutorial' and\
-                   'analysis'. 'tutorial' mode runs a recommendation example\
-                   using the infamous 'Online Retail' dataset from UCI's \
-                   repositories. 'analysis' mode is what you want to normally\
+                   'analysis'.  'analysis' mode is what you want to normally\
                    use.")
+"""
+
+#### colocar condicional para o modo tutorial
+@click.command()
+@click.option('--tutorial', is_flag=True, callback=run_tutorial,
+              expose_value=False, is_eager=True,
+              help="tutorial mode runs a recommendation example\
+                   using the infamous 'Online Retail' dataset from UCI's \
+                   repositories.")
 @click.option('--input_path',
               type=click.Path(exists=True, readable=True),
               prompt='Absolute path to input file',
@@ -43,14 +59,13 @@ logging.basicConfig(
 @click.option('--prd_col',
               type=click.STRING,
               prompt='Product IDs column',
-              help='Column in the input dataset containing the Products IDs')
-def als_recommendation(mode, input_path, output_path, cli_col, prd_col):
+              help='Column in the input dataset containing the Products IDs')              
+def als_recommendation(input_path, output_path, cli_col, prd_col):
+    #mode, input_path, output_path, cli_col, prd_col
     """Product recommendation system based on client's implicit interactions
     """
-    if mode == 'tutorial':
-        example.als_recs_example()
-    elif mode == 'analysis':
-        pipeline.run_als_rec(input_path, output_path, cli_col, prd_col)
+    pipeline.run_als_rec(input_path, output_path, cli_col, prd_col)
+    return 
 
 
 if __name__ == '__main__':

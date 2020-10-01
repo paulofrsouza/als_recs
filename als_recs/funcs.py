@@ -114,27 +114,31 @@ def train_evaluate_als_model(csr_prd_cli_matrix):
     df_grid, df_test = train_test_split(csr_prd_cli_matrix,
                                         train_percentage=0.8)
     df_train, df_eval = train_test_split(df_grid, train_percentage=0.8)
+    eval_k_size = int(df_eval.shape[0]*0.1)
+    test_k_size = int(df_test.shape[0]*0.1)
     grid_score = {}
 
     for i, grid in enumerate(param_grid):
         m = AlternatingLeastSquares(**grid)
         m.fit(df_train, show_progress=False)
         score = mean_average_precision_at_k(m, df_train, df_eval,
+                                            K=eval_k_size,
                                             num_threads=0, show_progress=False)
         grid_score[i] = score
 
     # printar os best param e score para o stdout no futuro
-    print('Best evaluation Mean Average Precision (@ K=10): {}'
-          .format(pd.Series(grid_score).max()))
+    print('Best evaluation Mean Average Precision (@ K={}): {}'
+          .format(eval_k_size, pd.Series(grid_score).max()))
     best = pd.Series(grid_score).idxmax()
     best_params = param_grid[best]
     model = AlternatingLeastSquares(**best_params)
     model.fit(csr_prd_cli_matrix)
     test_score = mean_average_precision_at_k(model,
                                              df_train, df_test,
+                                             K=test_k_size,
                                              num_threads=0,
                                              show_progress=False)
-    print('Best test Mean Average Precision (@ K=10): {}'
-          .format(test_score))
+    print('Best test Mean Average Precision (@ K={}): {}'
+          .format(test_k_size, test_score))
 
     return model

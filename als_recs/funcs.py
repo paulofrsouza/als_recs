@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os
 import pandas as pd
 from numpy import float64 as npfloat64
 from scipy.sparse import coo_matrix, csr_matrix
 from sklearn.model_selection import ParameterGrid
-
 from implicit.als import AlternatingLeastSquares
 from implicit.evaluation import train_test_split
-from implicit.evaluation import mean_average_precision_at_k
+from implicit.evaluation import precision_at_k
 
 # Sistema de recomendações de Produtos-para-Produto e de Prdutos-para-Cliente.
 # Se baseia na implementação do algoritmo ALS na biblioteca Python `implicit`,
@@ -23,6 +23,29 @@ from implicit.evaluation import mean_average_precision_at_k
 # Montar como um projeto próprio, seguindo o template do cookicutter
 # Indicar as necessidades do dataset alimentado: tabela esparsa de scores
 # implícitos, com Cliente_ID no index e Produto_ID nas colunas
+
+
+def get_prj_path(proj_name):
+    """
+    Project Absolute Path
+
+    Returns a string describing the absolute path of the project root folder.
+
+    Parameters
+    ----------
+    proj_name : str
+        String describing the project root folder name.
+    """
+    curr = os.getcwd().split('/')
+    path = []
+    for folder in curr:
+        if folder == proj_name:
+            path.append(folder)
+            break
+        else:
+            path.append(folder)
+    path = '/'.join(path)
+    return path
 
 
 def get_spr_matrix(df_long, prd_col, cli_col):
@@ -101,7 +124,7 @@ def train_evaluate_als_model(csr_prd_cli_matrix):
     params = {
             'factors': [50, 100, 150],
             'regularization': [0.01, 0.05, 0.1],
-            'dtype': [npfloat64],  # prestar atenção nesse parametro
+            'dtype': [npfloat64],
             'use_native': [True],
             'use_cg': [False],
             'use_gpu': [False],
@@ -121,23 +144,18 @@ def train_evaluate_als_model(csr_prd_cli_matrix):
     for i, grid in enumerate(param_grid):
         m = AlternatingLeastSquares(**grid)
         m.fit(df_train, show_progress=False)
-        score = mean_average_precision_at_k(m, df_train, df_eval,
-                                            K=eval_k_size,
-                                            num_threads=0, show_progress=False)
+        score = precision_at_k(m, df_train, df_eval, K=eval_k_size,
+                               num_threads=0, show_progress=False)
         grid_score[i] = score
 
-    # printar os best param e score para o stdout no futuro
     print('Best evaluation Mean Average Precision (@ K={}): {}'
           .format(eval_k_size, pd.Series(grid_score).max()))
     best = pd.Series(grid_score).idxmax()
     best_params = param_grid[best]
     model = AlternatingLeastSquares(**best_params)
     model.fit(csr_prd_cli_matrix)
-    test_score = mean_average_precision_at_k(model,
-                                             df_train, df_test,
-                                             K=test_k_size,
-                                             num_threads=0,
-                                             show_progress=False)
+    test_score = precision_at_k(model, df_train, df_test, K=test_k_size,
+                                num_threads=0, show_progress=False)
     print('Best test Mean Average Precision (@ K={}): {}'
           .format(test_k_size, test_score))
 

@@ -3,49 +3,25 @@
 
 import os
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
-
 import pandas as pd
 from als_recs import funcs as als
 from implicit.als import AlternatingLeastSquares
 from IPython.display import display
 from numpy import float64 as npfloat64
-import pickle
-
+from time import sleep
 import warnings
 warnings.filterwarnings('ignore')
 
 
-def get_prj_path(proj_name):
-    """
-    Project Absolute Path
-
-    Returns a string describing the absolute path of the project root folder.
-
-    Parameters
-    ----------
-    proj_name : str
-        String describing the project root folder name.
-    """
-    curr = os.getcwd().split('/')
-    path = []
-    for folder in curr:
-        if folder == proj_name:
-            path.append(folder)
-            break
-        else:
-            path.append(folder)
-    path = '/'.join(path)
-    return path
-
-
 def als_recs_example():
-    prj_path = get_prj_path('als_recs')
+    prj_path = als.get_prj_path('als_recs')
     df = pd.read_csv(prj_path + '/data/raw/online_retail_long.csv')
     prd_col = 'StockCode'
     cli_col = 'CustomerID'
 
     with open(prj_path + '/als_recs/tutorial.txt', 'r') as fin:
         print(fin.read())
+    sleep(10)
 
     print('----------------------------------------')
     print('Processed Dataset to be fed to the model')
@@ -57,7 +33,6 @@ def als_recs_example():
      df_cat) = als.get_spr_matrix(df, prd_col, cli_col)
     prd_ids, cli_ids = als.get_ids(df_cat, prd_col, cli_col)
 
-    # model = als.train_evaluate_als_model(csr_prd_cli_matrix)
     print('\n--------------')
     print('Model training')
     print('--------------')

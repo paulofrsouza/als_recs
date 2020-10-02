@@ -10,9 +10,9 @@ import logging
 def run_als_rec(input_path, output_path, cli_col, prd_col):
     logging.info('Starting the analysis pipeline.')
     df = pd.read_csv(input_path)
-    csr_prd_cli_matrix, csr_cli_prd_matrix, df_cat = als.get_spr_matrix(df,
-                                                                        prd_col,
-                                                                        cli_col)
+    (csr_prd_cli_matrix,
+     csr_cli_prd_matrix,
+     df_cat) = als.get_spr_matrix(df, prd_col, cli_col)
     prd_ids, cli_ids = als.get_ids(df_cat, prd_col, cli_col)
 
     logging.info('Training and evaluating the ALS model.')
@@ -40,6 +40,6 @@ def run_als_rec(input_path, output_path, cli_col, prd_col):
 
 if __name__ == '__main__':
     df = pd.read_csv('/path/to/processed/data.csv')
-    cli_col = 'cli_col'  # pegar prd_col da CLI
-    prd_col = 'prd_col'  # prgar cli_col da CLI
+    cli_col = 'cli_col'
+    prd_col = 'prd_col'
     run_als_rec(df, prd_col, cli_col)

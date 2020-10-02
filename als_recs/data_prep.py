@@ -5,7 +5,8 @@ import pandas as pd
 
 # Fetching online retail data from UCI repository
 def fetch_wrangle_data():
-    url = 'http://archive.ics.uci.edu/ml/machine-learning-databases/00352/Online%20Retail.xlsx'
+    url = 'http://archive.ics.uci.edu/ml/machine-learning-databases/00352/\
+            Online%20Retail.xlsx'
     df = pd.read_excel(url)
     df.drop(['InvoiceNo', 'Description', 'InvoiceDate', 'Country'],
             axis=1, inplace=True)
@@ -15,7 +16,6 @@ def fetch_wrangle_data():
     df['total_price'] = df.Quantity * df.UnitPrice
     df.drop(['Quantity', 'UnitPrice'], axis=1, inplace=True)
     df.to_csv('../data/processed/online_retail_long.csv', index=False)
-    return
 
 
 if __name__ == '__main__':

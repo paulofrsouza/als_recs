@@ -22,20 +22,6 @@ def run_tutorial(ctx, param, value):
     ctx.exit()
 
 
-
-
-"""
-@click.option('-m', '--mode',
-              type=click.Choice(['analysis', 'tutorial'],
-                                case_sensitive=False),
-              prompt='Execution mode',
-              default='analysis',
-              help="Program's execution modes. Options are 'tutorial' and\
-                   'analysis'.  'analysis' mode is what you want to normally\
-                   use.")
-"""
-
-#### colocar condicional para o modo tutorial
 @click.command()
 @click.option('--tutorial', is_flag=True, callback=run_tutorial,
               expose_value=False, is_eager=True,
@@ -59,13 +45,11 @@ def run_tutorial(ctx, param, value):
 @click.option('--prd_col',
               type=click.STRING,
               prompt='Product IDs column',
-              help='Column in the input dataset containing the Products IDs')              
+              help='Column in the input dataset containing the Products IDs')
 def als_recommendation(input_path, output_path, cli_col, prd_col):
-    #mode, input_path, output_path, cli_col, prd_col
     """Product recommendation system based on client's implicit interactions
     """
     pipeline.run_als_rec(input_path, output_path, cli_col, prd_col)
-    return 
 
 
 if __name__ == '__main__':

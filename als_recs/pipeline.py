@@ -34,8 +34,8 @@ def run_als_rec(input_path, output_path, cli_col, prd_col):
     prd_recs.to_csv(output_path + 'prd_prd_als_recs.csv')
     cli_recs.to_csv(output_path + 'cli_cli_als_recs.csv')
     prd_cli_recs.to_csv(output_path + 'prd_cli_als_recs.csv')
-
-    return model
+    
+    return
 
 
 if __name__ == '__main__':

@@ -15,7 +15,7 @@ def fetch_wrangle_data():
     df['CustomerID'] = df.CustomerID.astype('int64')
     df['total_price'] = df.Quantity * df.UnitPrice
     df.drop(['Quantity', 'UnitPrice'], axis=1, inplace=True)
-    df.to_csv('../data/processed/online_retail_long.csv', index=False)
+    df.to_csv('../data/online_retail_long.csv', index=False)
 
 
 if __name__ == '__main__':

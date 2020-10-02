@@ -15,7 +15,7 @@ warnings.filterwarnings('ignore')
 
 def als_recs_example():
     prj_path = als.get_prj_path('als_recs')
-    df = pd.read_csv(prj_path + '/data/raw/online_retail_long.csv')
+    df = pd.read_csv(prj_path + '/data/online_retail_long.csv')
     prd_col = 'StockCode'
     cli_col = 'CustomerID'
 

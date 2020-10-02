@@ -5,7 +5,7 @@ Product recommendation system based on Client's implicit interactions. It is bas
 
 'Implicit scores' are understood as metrifications of any kind of interaction the Client had with a Product, as long as this interaction wasn't an evaluation of the Product (e.g. listening to some music on Spotify or searching for a given product in an e-commerce, as opposed to rating some app with 5 stars).
 
-The recommendation systems is packaged as a **CLI tool** for ease of usage.
+The recommendation system is packaged as a **CLI tool** for ease of usage.
 
 The data passed to the tool must be in LONG format, where each row is an
 implicit interaction the Client had with a given Product. The data must
@@ -78,7 +78,7 @@ pip3 install -e .
 Project Organization
 ------------
     .
-    ├── als_helper
+    ├── als_recs
     │   ├── als_cli.py     <- Definition of CLI tool
     │   ├── example.py     <- Example use case of CLI tool
     │   ├── funcs.py       <- Helper functions for Product Recommendation system 

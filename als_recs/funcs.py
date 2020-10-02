@@ -9,20 +9,10 @@ from implicit.als import AlternatingLeastSquares
 from implicit.evaluation import train_test_split
 from implicit.evaluation import precision_at_k
 
-# Sistema de recomendações de Produtos-para-Produto e de Prdutos-para-Cliente.
-# Se baseia na implementação do algoritmo ALS na biblioteca Python `implicit`,
-# focada em sistemas de recomendação baseado em scores implícitos. Por 'score
-# implícito' se entende qualquer tipo de interação que o cliente teve com o
-# produto, onde a interação não se refere a uma avaliação (5 estrelas, p.ex.).
-
-# O algoritmo é extremamente rápido, apresenta implementação em CPython e
-# tem amplo suporte para multithreading. Utiliza a representação CSR para
-# matrizes esparsas, conforme implementado na lib Scipy, o que também garante
-# grande eficiência de memória ao mesmo.
-
-# Montar como um projeto próprio, seguindo o template do cookicutter
-# Indicar as necessidades do dataset alimentado: tabela esparsa de scores
-# implícitos, com Cliente_ID no index e Produto_ID nas colunas
+"""
+Helper functions for Product Recommendation system based on implicit Client
+interactions.
+"""
 
 
 def get_prj_path(proj_name):
@@ -49,36 +39,99 @@ def get_prj_path(proj_name):
 
 
 def get_spr_matrix(df_long, prd_col, cli_col):
-    if len(df_long.columns) > 3:
+    """Calculate Interactions Sparse Matrix
+
+    Given the dataset containing implicit Client-Product interactions in long
+    format, returns a sparse representation of it along a transposed version.
+    Also transforms cli_col and prd_col in 'category' types for further
+    processing.
+
+    Parameters
+    ----------
+    df_long: pandas DataFrame
+        Dataset containing implicit interactions, in long format.
+    prd_col: str
+        Name of the column containing the ProductIDs.
+    cli_col: str
+        Name of the column containing the ClientIDs.
+
+    Returns
+    -------
+    csr_prd_cli_matrix: scipy.csr_matrix
+        Sparse CSR representation of df_long, with shape prd_col x cli_col.
+    csr_cli_prd_matrix: scipy.csr_matrix
+        Sparse CSR representation of df_long, with shape cli_col x prd_col.
+    df_cat: pandas DataFrame
+        Representation of df_long, with prd_col and cli_col as categories.
+    """
+    df_cat = df_long.copy()
+    if len(df_cat.columns) > 3:
         raise ValueError('The implicit interactions dataset does not have the \
                          right amount of columns. Expected [cli_ids, prd_ids, \
                          implicit_score]')
 
-    score_col = (set(df_long.columns) - set([prd_col, cli_col])).pop()
-    df_long.dropna(inplace=True)
-    df_long[prd_col] = df_long[prd_col].astype('category')
-    df_long[cli_col] = df_long[cli_col].astype('category')
+    score_col = (set(df_cat.columns) - set([prd_col, cli_col])).pop()
+    df_cat.dropna(inplace=True)
+    df_cat[prd_col] = df_cat[prd_col].astype('category')
+    df_cat[cli_col] = df_cat[cli_col].astype('category')
 
-    csr_prd_cli_matrix = coo_matrix((df_long[score_col],
-                                     (df_long[prd_col].cat.codes.copy(),
-                                      df_long[cli_col].cat.codes.copy())),
+    csr_prd_cli_matrix = coo_matrix((df_cat[score_col],
+                                     (df_cat[prd_col].cat.codes.copy(),
+                                      df_cat[cli_col].cat.codes.copy())),
                                     dtype=npfloat64).tocsr()
-    csr_cli_prd_matrix = coo_matrix((df_long[score_col],
-                                     (df_long[cli_col].cat.codes.copy(),
-                                      df_long[prd_col].cat.codes.copy())),
+    csr_cli_prd_matrix = coo_matrix((df_cat[score_col],
+                                     (df_cat[cli_col].cat.codes.copy(),
+                                      df_cat[prd_col].cat.codes.copy())),
                                     dtype=npfloat64).tocsr()
 
-    return csr_prd_cli_matrix, csr_cli_prd_matrix, df_long
+    return csr_prd_cli_matrix, csr_cli_prd_matrix, df_cat
 
 
-def get_ids(df_long, prd_col, cli_col):
-    prds = dict(enumerate(df_long[prd_col].cat.categories))
-    clis = dict(enumerate(df_long[cli_col].cat.categories))
+def get_ids(df_cat, prd_col, cli_col):
+    """
+    Obtain Client and Produtct IDs positions
+
+    Parameters
+    ----------
+    df_cat: pandas Data Frames
+        Representation of df_long, with prd_col and cli_col as categories.
+    prd_col: str
+        Name of the column containing the ProductIDs.
+    cli_col: str
+        Name of the column containing the ClientIDs.
+
+    Returns
+    -------
+    prds: dict
+        Dictionary with ProductIDs positions as keys and ProductIDs as values.
+    clis: dict
+        Dictionary with ClientIDs positions as keys and ClientIDs as values.
+    """
+    prds = dict(enumerate(df_cat[prd_col].cat.categories))
+    clis = dict(enumerate(df_cat[cli_col].cat.categories))
 
     return prds, clis
 
 
 def get_prd_prd_recs(prd_ids, model):
+    """
+    Obtain Recommendations of Similar Products
+
+    Returns a list with Top 10 similar products for each distinct product in
+    the dataset. The recommendations are already sorted by affinity with the
+    given product.
+
+    Parameters
+    ----------
+    prd_ids: dict
+        Dictionary with ProductIDs positions as keys and ProductIDs as values.
+    model: implicit.als.AlternatingLeastSquares model
+        Fitted Alternating Leas Squares model from the 'implicit' Python lib.
+
+    Returns
+    -------
+    prd_recs: pandas DataFrame
+    """
     pos_recs = {}
     for pos, prd in prd_ids.items():
         recs = model.similar_items(pos, N=11)
@@ -93,6 +146,24 @@ def get_prd_prd_recs(prd_ids, model):
 
 
 def get_cli_cli_recs(cli_ids, model):
+    """
+    Obtain Recommendations of Similar Clients
+
+    Returns a list with Top 10 similar clients for each distinct client in
+    the dataset. The recommendations are already sorted by affinity with the
+    given client.
+
+    Parameters
+    ----------
+    cli_ids: dict
+        Dictionary with ClientIDs positions as keys and ClientIDs as values.
+    model: implicit.als.AlternatingLeastSquares model
+        Fitted Alternating Leas Squares model from the 'implicit' Python lib.
+
+    Returns
+    -------
+    cli_recs: pandas DataFrame
+    """
     pos_recs = {}
     for pos, cli in cli_ids.items():
         recs = model.similar_users(pos, N=11)
@@ -107,6 +178,28 @@ def get_cli_cli_recs(cli_ids, model):
 
 
 def get_prd_cli_recs(csr_cli_prd_matrix, model, cli_ids, prd_ids):
+    """
+    Obtain Recommendations of Products to Clients
+
+    Returns a list with Top 10 product recommendation to each client in the
+    dataset. The recommendations are already sorted by affinity with the
+    given client.
+
+    Parameters
+    ----------
+    csr_cli_prd_matrix: scipy.csr_matrix
+        Sparse CSR representation of df_long, with shape cli_col x prd_col.
+    model: implicit.als.AlternatingLeastSquares model
+        Fitted Alternating Leas Squares model from the 'implicit' Python lib.
+    cli_ids: dict
+        Dictionary with ClientIDs positions as keys and ClientIDs as values.
+    prd_ids: dict
+        Dictionary with ProductIDs positions as keys and ProductIDs as values.
+
+    Returns
+    -------
+    prd_cli_recs: pandas DataFrame
+    """
     pos_recs = {}
     for pos, cli in cli_ids.items():
         recs = model.recommend(pos, user_items=csr_cli_prd_matrix, N=11)
@@ -121,6 +214,22 @@ def get_prd_cli_recs(csr_cli_prd_matrix, model, cli_ids, prd_ids):
 
 
 def train_evaluate_als_model(csr_prd_cli_matrix):
+    """
+    Define, fit and tune ALS model
+
+    Returns an optimized instance of the implicit-ALS model. Implements a Grid
+    Search over some hyperparamters. Uses Precision@K as the evaluation metric,
+    analyzing 10% of the data given.
+
+    Parameters
+    ----------
+    csr_prd_cli_matrix: scipy.csr_matrix
+        Sparse CSR representation of df_long, with shape prd_col x cli_col.
+
+    Returns
+    -------
+    model: implicit.als.AlternatingLeastSquares model
+    """
     params = {
             'factors': [50, 100, 150],
             'regularization': [0.01, 0.05, 0.1],

@@ -77,23 +77,33 @@ pip3 install -e .
 
 Project Organization
 ------------
-
-    ├── LICENSE
-    ├── README.md
+    .
+    ├── als_helper
+    │   ├── als_cli.py     <- Definition of CLI tool
+    │   ├── example.py     <- Example use case of CLI tool
+    │   ├── funcs.py       <- Helper functions for Product Recommendation system 
+    │   │                     based on implicit Client interactions.
+    │   └── pipeline.py    <- Data pipeline script for analysis and recommendation
+    │
     ├── data
     │   ├── dataset_info.md         <- Description of the original dataset used in the tutorial
     │   └── online_retail_long.csv  <- Transformed long dataset used in the tutorial
-    ├── requirements.txt   
-    └── als_helper
-        ├── als_cli.py     <- Definition of CLI tool
-        ├── example.py     <- Example use case of CLI tool
-        ├── funcs.py       <- Helper functions for Product Recommendation system based on implicit Client interactions.
-        └── pipeline.py    <- Data pipeline script for analysis and recommendation
+    │
+    ├── LICENSE
+    ├── README.md
+    ├── requirements.txt
+    │
+    └── results                     <- Tutorial's output folder
+        ├── cli_cli_als_recs.csv    <- csv with similar clients recommendations
+        ├── prd_prd_als_recs.csv    <- csv with similar products recommendations
+        ├── prd_cli_als_recs.csv    <- csv with top products recommendations
+        └── mdl_als_implict.pkl     <- Pickled model used for recommendations
+    
 
 Dependencies
 ------------
 
-The tool relies heavily on the excellent [implicit](https://github.com/benfred/implicit) package by Ben Frederickson. The package's implementation of the Alternating Least Squares algorithm is extremely fast, due to it's CPython use and broad support to multithreading. It also uses Scipy's CSR representation for sparse matrix, which ensures a big memory efficiency. [Ben's blog](https://www.benfrederickson.com/matrix-factorization/) is a must read for anyone interested in Recommender Systems.
+The tool relies heavily on the excellent [implicit](https://github.com/benfred/implicit) package by Ben Frederickson. The package's implementation of the Alternating Least Squares algorithm is extremely fast, due to it's CPython use and broad support to multithreading. It also uses Scipy's CSR representation for sparse matrixes, which ensures a big memory efficiency. [Ben's blog](https://www.benfrederickson.com/matrix-factorization/) is a must read for anyone interested in Recommender Systems.
 
 It is used [Pandas](https://pandas.pydata.org/pandas-docs/stable/index.html) for data wrangling. Given its capabilities for data manipulation, it is highly recommended to have a good understanding of it. The [10 minutes to Pandas](https://pandas.pydata.org/pandas-docs/stable/user_guide/10min.html) tutorial is a great starting point.
 

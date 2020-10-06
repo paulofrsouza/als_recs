@@ -75,6 +75,26 @@ pip3 install -r requirements.txt
 pip3 install -e .
 ```
 
+Docker Image
+------------
+
+In case you want to deploy the tool into some cloud environment, there is a Docker image available.
+
+```sh
+# Download the image from Docker Hub
+docker pull paulofrsouza/als_recs:0.1
+# Create an empty volume and save the input data there
+docker volume create --name als_recs
+sudo cp <input_data.csv> /var/lib/docker/volumes/als_recs/_data
+# Run the container
+docker run -i --name als_recs -v als_recs:/usr/src/app/data
+# The path must be relative to the container
+@als_recs> Absolute path to input file: /usr/src/app/data/input_file.csv
+@als_recs> Absolute path to output folder: /usr/src/app/data
+@als_recs> Client IDs column: <cli_col>
+@als_recs> Product IDs column: <prd_col>
+```
+
 Project Organization
 ------------
     .
@@ -92,6 +112,7 @@ Project Organization
     ├── LICENSE
     ├── README.md
     ├── requirements.txt
+    ├── Dockerfile
     │
     └── results                     <- Tutorial's output folder
         ├── cli_cli_als_recs.csv    <- csv with similar clients recommendations

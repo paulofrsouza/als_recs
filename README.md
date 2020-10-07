@@ -5,7 +5,7 @@ Product recommendation system based on Client's implicit interactions. It is bas
 
 'Implicit scores' are understood as metrifications of any kind of interaction the Client had with a Product, as long as this interaction wasn't an evaluation of the Product (e.g. listening to some music on Spotify or searching for a given product in an e-commerce, as opposed to rating some app with 5 stars).
 
-The recommendation system is packaged as a **CLI tool** for ease of usage.
+The recommendation system is packaged as a **CLI tool** for ease of usage. There is also the possibility to use it as a **Docker container**.
 
 The data passed to the tool must be in LONG format, where each row is an
 implicit interaction the Client had with a given Product. The data must
@@ -78,7 +78,7 @@ pip3 install -e .
 Docker Image
 ------------
 
-In case you want to deploy the tool into some cloud environment, there is a Docker image available.
+In case you want to deploy the tool into some cloud environment, there is a Docker image available. The docker image does not support the Tutorial Mode.
 
 ```sh
 # Download the image from Docker Hub
